@@ -1,0 +1,103 @@
+import enchant
+import pandas as pd
+import math
+import re
+
+
+filepath = input("Enter file path:")
+table1 = pd.read_parquet(filepath, engine='pyarrow')  
+pd.read_parquet(filepath, engine='pyarrow')
+
+
+def to_list(a, b):
+    jd_list = table1[a].tolist()
+    pt_list = table1[b].tolist()
+    return jd_list, pt_list
+
+lists = to_list("job_desc", "position_title")
+
+
+
+def remove_null(c, d):
+    remove_num = []
+    l = 0
+
+    for i in range(len(c)):
+
+        if c[i] == None:
+            if i not in remove_num:
+                remove_num.append(i)
+
+        elif d[i] == None:
+            if i not in remove_num:
+                remove_num.append(i)
+
+    null_count = len(remove_num)
+
+    for j in remove_num:
+        del c[j - l]
+        del d[j - l]
+        l += 1
+
+    new_c = c
+    new_d = d
+
+    return new_c, new_d, null_count
+
+
+
+def CI(z, N, n, p):
+    ci_plus = (p + (z * math.sqrt((p * (1 - p)) / n)))
+    ci_minus = (p - (z * math.sqrt((p * (1 - p)) / n)))
+
+    return ci_plus, ci_minus
+
+
+
+
+clean = remove_null(lists[1], lists[0])
+
+
+categorize = sort(clean[0], clean[1])
+
+
+eng_PTitle = categorize[3] + categorize[6] + categorize[4] + categorize[5] + categorize[7] + categorize[8]
+eng_PTitle_thai_JDesc = categorize[4] + categorize[5] + categorize[7] + categorize[8]
+
+
+
+share = eng_PTitle_thai_JDesc / eng_PTitle
+
+
+
+total_population = 6900000
+extrapolate = total_population * share
+
+
+
+confidence_interval = CI(1.96, total_population, eng_PTitle, share)
+
+
+
+
+
+classes1 = ['English Title', 'English and Thai Title', 'Thai Title']
+classes2 = ['English Desc', 'English and Thai Desc', 'Thai Desc']
+
+E_EngJDesc = categorize[3]
+E_EngThaiJDesc = categorize[4]
+E_ThaiJDesc = categorize[5]
+ET_EngJDesc = categorize[6]
+ET_EngThaiJDesc = categorize[7]
+ET_ThaiJDesc = categorize[8]
+T_EngJDesc = categorize[9]
+T_EngThaiJDesc = categorize[10]
+T_ThaiJDesc = categorize[11]
+
+df = pd.DataFrame([[E_EngJDesc, ET_EngJDesc, T_EngJDesc], [E_EngThaiJDesc, ET_EngThaiJDesc, T_EngThaiJDesc], [E_ThaiJDesc, ET_ThaiJDesc, T_ThaiJDesc]], columns = classes1, index = classes2)
+print(df)
+print("Total removed data:", clean[2])
+print("Total data:", len(lists[1]))
+print("Percentage of share of ads:", share * 100, "%")
+print("Extrapolated Results", extrapolate)
+print("Condifence_Interval:", confidence_interval)
